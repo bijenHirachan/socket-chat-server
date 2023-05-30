@@ -17,7 +17,13 @@ export const sendMessage = catchAsyncErrors(async (req, res, next) => {
     sender: req.user._id,
   });
 
-  await sentMessage.populate("sender");
+  await (
+    await sentMessage.populate({
+      path: "conversation",
+      select: "-messages",
+      populate: { path: "users" },
+    })
+  ).populate("sender");
 
   conversation.messages.push(sentMessage._id);
   conversation.lastMessageAt = Date.now();

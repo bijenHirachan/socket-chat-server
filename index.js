@@ -47,19 +47,30 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-  console.log("A user connected", socket.id);
+  socket.on("setup", (user) => {
+    socket.join(user._id);
+    socket.emit("connected");
+  });
 
   socket.on("join_room", (data) => {
-    // console.log(data);
     socket.join(data);
   });
 
   socket.on("send_message", async (data) => {
-    // console.log(data);
+    if (!data.conversation.users) return console.log("No users");
 
-    // console.log(message);
-    // socket.broadcast.emit("receive_message", data);
-    socket.to(data.conversationId).emit("receive_message", data);
+    data.conversation.users.forEach((user) => {
+      if (user._id == data.userId) return;
+      socket.in(user._id).emit("receive_message", data);
+    });
+  });
+
+  socket.on("typing", (room) => {
+    socket.in(room).emit("typing");
+  });
+
+  socket.on("stop_typing", (room) => {
+    socket.in(room).emit("stop_typing");
   });
 });
 
